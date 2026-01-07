@@ -2,6 +2,8 @@
 
 A minimal Node.js scaffold that serves a static frontend and exposes a WebSocket endpoint.
 
+Deployed on Render.
+
 ## Prerequisites
 
 - Node.js LTS
@@ -22,6 +24,13 @@ Open the app:
 WebSocket endpoint:
 
 - ws://localhost:3000/ws
+
+## Deployment (Render)
+
+- Service type: Render Web Service (free tier).
+- Build command: `npm install`
+- Start command: `npm start`
+- Deployed URL: `https://<app-name>.onrender.com`
 
 ## What it does
 
