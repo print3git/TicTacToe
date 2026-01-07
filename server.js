@@ -39,7 +39,8 @@ const createServer = () => {
   };
 
   const leaveRoom = (ws, { roomId, sendErrors } = {}) => {
-    const resolvedRoomId = roomId || socketToRoom.get(ws);
+    const mappedRoomId = socketToRoom.get(ws);
+    const resolvedRoomId = roomId || mappedRoomId;
     if (!resolvedRoomId) {
       if (sendErrors) {
         sendMessage(ws, { type: 'error', message: 'Not currently in a room.' });
@@ -49,7 +50,9 @@ const createServer = () => {
 
     const room = rooms.get(resolvedRoomId);
     if (!room) {
-      socketToRoom.delete(ws);
+      if (mappedRoomId === resolvedRoomId) {
+        socketToRoom.delete(ws);
+      }
       if (sendErrors) {
         sendMessage(ws, { type: 'error', message: 'Room not found.' });
       }
@@ -59,6 +62,9 @@ const createServer = () => {
     const isPlayerX = room.players.X === ws;
     const isPlayerO = room.players.O === ws;
     if (!isPlayerX && !isPlayerO) {
+      if (mappedRoomId === resolvedRoomId) {
+        socketToRoom.delete(ws);
+      }
       if (sendErrors) {
         sendMessage(ws, {
           type: 'error',
