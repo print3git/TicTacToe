@@ -209,6 +209,37 @@ const createServer = () => {
         return;
       }
 
+      if (message.type === 'play_again') {
+        const roomId = message.roomId;
+        if (typeof roomId !== 'string' || !rooms.has(roomId)) {
+          sendMessage(ws, { type: 'error', message: 'Room not found.' });
+          return;
+        }
+
+        const room = rooms.get(roomId);
+        const player =
+          room.players.X === ws ? 'X' : room.players.O === ws ? 'O' : null;
+        if (!player) {
+          sendMessage(ws, {
+            type: 'error',
+            message: 'You are not a player in this room.',
+          });
+          return;
+        }
+
+        if (room.status !== 'ended') {
+          sendMessage(ws, { type: 'error', message: 'Game is not finished.' });
+          return;
+        }
+
+        room.board = Array(9).fill('');
+        room.turn = 'X';
+        room.winner = null;
+        room.status = 'playing';
+        broadcastRoomState(room);
+        return;
+      }
+
       ws.send(JSON.stringify({ type: 'echo', data: data.toString() }));
     });
 
