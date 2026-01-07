@@ -38,6 +38,58 @@ const createServer = () => {
     }
   };
 
+  const leaveRoom = (ws, { roomId, sendErrors } = {}) => {
+    const resolvedRoomId = roomId || socketToRoom.get(ws);
+    if (!resolvedRoomId) {
+      if (sendErrors) {
+        sendMessage(ws, { type: 'error', message: 'Not currently in a room.' });
+      }
+      return;
+    }
+
+    const room = rooms.get(resolvedRoomId);
+    if (!room) {
+      socketToRoom.delete(ws);
+      if (sendErrors) {
+        sendMessage(ws, { type: 'error', message: 'Room not found.' });
+      }
+      return;
+    }
+
+    const isPlayerX = room.players.X === ws;
+    const isPlayerO = room.players.O === ws;
+    if (!isPlayerX && !isPlayerO) {
+      if (sendErrors) {
+        sendMessage(ws, {
+          type: 'error',
+          message: 'You are not a player in this room.',
+        });
+      }
+      return;
+    }
+
+    const opponent = isPlayerX ? room.players.O : room.players.X;
+
+    if (isPlayerX) {
+      room.players.X = null;
+    }
+    if (isPlayerO) {
+      room.players.O = null;
+    }
+    socketToRoom.delete(ws);
+
+    room.status = 'ended';
+    room.turn = null;
+    room.winner = null;
+    room.board = null;
+
+    if (opponent) {
+      sendMessage(opponent, { type: 'opponent_left' });
+    }
+
+    cleanupRoomIfEmpty(room);
+  };
+
   const broadcastRoomState = (room) => {
     if (!room) {
       return;
@@ -134,6 +186,16 @@ const createServer = () => {
         console.log(`room ${roomId} joined`);
         sendMessage(ws, { type: 'game_joined', roomId, player: 'O' });
         broadcastRoomState(room);
+        return;
+      }
+
+      if (message.type === 'leave_room') {
+        const roomId = message.roomId;
+        if (typeof roomId !== 'string') {
+          sendMessage(ws, { type: 'error', message: 'Room not found.' });
+          return;
+        }
+        leaveRoom(ws, { roomId, sendErrors: true });
         return;
       }
 
@@ -244,30 +306,7 @@ const createServer = () => {
     });
 
     ws.on('close', () => {
-      const roomId = socketToRoom.get(ws);
-      if (!roomId) {
-        return;
-      }
-      socketToRoom.delete(ws);
-      const room = rooms.get(roomId);
-      if (!room) {
-        return;
-      }
-      if (room.players.X === ws) {
-        room.players.X = null;
-      }
-      if (room.players.O === ws) {
-        room.players.O = null;
-      }
-      room.status = room.players.X && room.players.O ? 'playing' : 'waiting';
-      if (room.status !== 'playing') {
-        room.board = null;
-        room.turn = null;
-        room.winner = null;
-      }
-      console.log(`ws disconnected from room ${roomId}`);
-      broadcastRoomState(room);
-      cleanupRoomIfEmpty(room);
+      leaveRoom(ws);
     });
   });
 

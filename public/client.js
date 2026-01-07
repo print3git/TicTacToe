@@ -10,6 +10,7 @@
   const boardEl = document.getElementById('board');
   const boardSquares = Array.from(document.querySelectorAll('.square'));
   const playAgainButton = document.getElementById('play-again');
+  const leaveRoomButton = document.getElementById('leave-room');
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
   const wsUrl = `${protocol}://${window.location.host}/ws`;
   const socket = new WebSocket(wsUrl);
@@ -17,6 +18,7 @@
   let currentRoomId = null;
   let playerSymbol = null;
   let gameState = null;
+  let lobbyMessage = 'Create or join a game to begin.';
 
   const setConnectionStatus = (text) => {
     connectionStatusEl.textContent = text;
@@ -57,7 +59,7 @@
 
   const updateGameStatus = () => {
     if (!currentRoomId) {
-      setGameMessage('Create or join a game to begin.');
+      setGameMessage(lobbyMessage);
       playAgainButton.hidden = true;
       return;
     }
@@ -95,12 +97,21 @@
     updateRoomDetails();
     updateGameStatus();
     updateBoard();
+    leaveRoomButton.hidden = !currentRoomId;
   };
 
   const sendMessage = (payload) => {
     if (socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify(payload));
     }
+  };
+
+  const resetToLobby = (message) => {
+    currentRoomId = null;
+    playerSymbol = null;
+    gameState = null;
+    lobbyMessage = message || 'Create or join a game to begin.';
+    render();
   };
 
   socket.addEventListener('open', () => {
@@ -144,6 +155,7 @@
       currentRoomId = message.roomId || null;
       playerSymbol = message.player || null;
       gameState = null;
+      lobbyMessage = 'Create or join a game to begin.';
       render();
       return;
     }
@@ -151,6 +163,7 @@
     if (message.type === 'game_joined') {
       currentRoomId = message.roomId || currentRoomId;
       playerSymbol = message.player || playerSymbol;
+      lobbyMessage = 'Create or join a game to begin.';
       render();
       return;
     }
@@ -165,6 +178,15 @@
       };
       render();
       return;
+    }
+
+    if (message.type === 'opponent_left') {
+      const roomId = currentRoomId;
+      setError('');
+      resetToLobby('Opponent left the game.');
+      if (roomId) {
+        sendMessage({ type: 'leave_room', roomId });
+      }
     }
   });
 
@@ -209,6 +231,19 @@
       return;
     }
     sendMessage({ type: 'play_again', roomId: currentRoomId });
+  });
+
+  leaveRoomButton.addEventListener('click', () => {
+    if (!currentRoomId) {
+      return;
+    }
+    const shouldLeave = window.confirm('Are you sure you want to leave this room?');
+    if (!shouldLeave) {
+      return;
+    }
+    setError('');
+    sendMessage({ type: 'leave_room', roomId: currentRoomId });
+    resetToLobby();
   });
 
   render();
