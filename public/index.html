@@ -4,92 +4,67 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Remote Tic-Tac-Toe</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 2rem;
-      }
-      .status {
-        font-weight: bold;
-      }
-      .layout {
-        display: flex;
-        flex-direction: column;
-        gap: 1.5rem;
-        max-width: 480px;
-      }
-      .panel {
-        padding: 1rem;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-      }
-      .row {
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-        align-items: center;
-      }
-      .row input {
-        flex: 1 1 160px;
-        padding: 0.4rem 0.6rem;
-      }
-      .board {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 6px;
-        max-width: 240px;
-      }
-      .square {
-        width: 72px;
-        height: 72px;
-        font-size: 2rem;
-        font-weight: bold;
-        text-align: center;
-        cursor: pointer;
-      }
-      .square:disabled {
-        cursor: not-allowed;
-        opacity: 0.6;
-      }
-      .error {
-        color: #b00020;
-        min-height: 1.2em;
-      }
-    </style>
+    <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
-    <h1>Remote Tic-Tac-Toe</h1>
-    <div class="layout">
-      <div class="panel">
-        <p>Connection: <span id="connection-status" class="status">disconnected</span></p>
-        <div class="row">
-          <button id="create-game" type="button">Create game</button>
-          <input id="room-input" type="text" placeholder="Room ID" maxlength="4" />
-          <button id="join-game" type="button">Join game</button>
+    <main class="app">
+      <header class="app-header">
+        <h1 class="app-title">Remote Tic-Tac-Toe</h1>
+        <p class="app-subtitle">Play a quick game with a friend in a shared room.</p>
+      </header>
+
+      <section class="card lobby-card">
+        <div class="card-header">
+          <h2 class="card-title">Lobby</h2>
+          <div class="card-meta">
+            <span class="status-pill" id="connection-pill" data-status="disconnected">
+              <span class="status-dot"></span>
+              <span>Connection: <strong id="connection-status">disconnected</strong></span>
+            </span>
+          </div>
         </div>
         <div class="row">
-          <div>Room: <span id="room-id">—</span></div>
-          <div>Player: <span id="player-symbol">—</span></div>
-          <button id="leave-room" type="button" hidden>Leave room</button>
+          <button id="create-game" type="button" class="primary-button">Create game</button>
+          <input
+            id="room-input"
+            class="field"
+            type="text"
+            placeholder="Room ID"
+            maxlength="4"
+          />
+          <button id="join-game" type="button" class="primary-button">Join game</button>
         </div>
-      </div>
-      <div class="panel">
-        <div id="game-message" class="status">Create or join a game to begin.</div>
+        <div class="row lobby-details">
+          <div class="detail">Room: <strong id="room-id">—</strong></div>
+          <div class="detail">Player: <strong id="player-symbol">—</strong></div>
+          <button id="leave-room" type="button" class="secondary-button" hidden>Leave room</button>
+        </div>
+      </section>
+
+      <section class="card game-card" id="game-card">
+        <div class="card-header">
+          <h2 class="card-title">Game Board</h2>
+          <div id="game-message" class="game-status" data-state="idle">
+            Create or join a game to begin.
+          </div>
+        </div>
         <div id="error-message" class="error"></div>
-        <div class="board" id="board">
-          <button class="square" data-index="0" type="button"></button>
-          <button class="square" data-index="1" type="button"></button>
-          <button class="square" data-index="2" type="button"></button>
-          <button class="square" data-index="3" type="button"></button>
-          <button class="square" data-index="4" type="button"></button>
-          <button class="square" data-index="5" type="button"></button>
-          <button class="square" data-index="6" type="button"></button>
-          <button class="square" data-index="7" type="button"></button>
-          <button class="square" data-index="8" type="button"></button>
+        <div class="board is-hidden" id="board">
+          <button class="square" data-index="0" type="button" aria-label="Top left"></button>
+          <button class="square" data-index="1" type="button" aria-label="Top middle"></button>
+          <button class="square" data-index="2" type="button" aria-label="Top right"></button>
+          <button class="square" data-index="3" type="button" aria-label="Middle left"></button>
+          <button class="square" data-index="4" type="button" aria-label="Center"></button>
+          <button class="square" data-index="5" type="button" aria-label="Middle right"></button>
+          <button class="square" data-index="6" type="button" aria-label="Bottom left"></button>
+          <button class="square" data-index="7" type="button" aria-label="Bottom middle"></button>
+          <button class="square" data-index="8" type="button" aria-label="Bottom right"></button>
         </div>
-        <button id="play-again" type="button" hidden>Play again</button>
-      </div>
-    </div>
+        <div class="action-row">
+          <button id="play-again" type="button" class="primary-button" hidden>Play again</button>
+        </div>
+      </section>
+    </main>
     <script src="/client.js"></script>
   </body>
 </html>

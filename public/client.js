@@ -1,5 +1,6 @@
 (() => {
   const connectionStatusEl = document.getElementById('connection-status');
+  const connectionPillEl = document.getElementById('connection-pill');
   const createGameButton = document.getElementById('create-game');
   const joinGameButton = document.getElementById('join-game');
   const roomInput = document.getElementById('room-input');
@@ -22,10 +23,14 @@
 
   const setConnectionStatus = (text) => {
     connectionStatusEl.textContent = text;
+    if (connectionPillEl) {
+      connectionPillEl.dataset.status = text;
+    }
   };
 
-  const setGameMessage = (text) => {
+  const setGameMessage = (text, state = 'idle') => {
     gameMessageEl.textContent = text;
+    gameMessageEl.dataset.state = state;
   };
 
   const setError = (text) => {
@@ -47,7 +52,8 @@
     const board = gameState && Array.isArray(gameState.board) ? gameState.board : [];
     boardSquares.forEach((square, index) => {
       const value = board[index] || '';
-      square.textContent = value;
+      square.dataset.value = value;
+      square.classList.toggle('has-mark', Boolean(value));
       const isDisabled =
         !gameState ||
         gameState.status !== 'playing' ||
@@ -55,41 +61,46 @@
         Boolean(value);
       square.disabled = isDisabled;
     });
+    boardEl.classList.toggle('is-hidden', !gameState);
+    boardEl.classList.toggle('is-disabled', !gameState || gameState.status !== 'playing');
   };
 
   const updateGameStatus = () => {
     if (!currentRoomId) {
-      setGameMessage(lobbyMessage);
+      setGameMessage(lobbyMessage, 'idle');
       playAgainButton.hidden = true;
       return;
     }
 
     if (!gameState) {
-      setGameMessage('Waiting for another player to join...');
+      setGameMessage('Waiting for opponent...', 'waiting');
       playAgainButton.hidden = true;
       return;
     }
 
     if (gameState.status === 'playing') {
-      const turnText = gameState.turn ? `${gameState.turn}'s turn` : 'Waiting for turn...';
-      setGameMessage(turnText);
+      if (isPlayersTurn()) {
+        setGameMessage('Your turn', 'your-turn');
+      } else {
+        setGameMessage('Opponent’s turn', 'opponent-turn');
+      }
       playAgainButton.hidden = true;
       return;
     }
 
     if (gameState.status === 'ended') {
       if (gameState.winner === 'draw') {
-        setGameMessage('Game over: Draw.');
+        setGameMessage('Draw', 'draw');
       } else if (gameState.winner) {
-        setGameMessage(`Game over: ${gameState.winner} wins.`);
+        setGameMessage(gameState.winner === playerSymbol ? 'You won' : 'You lost', gameState.winner === playerSymbol ? 'win' : 'loss');
       } else {
-        setGameMessage('Game over.');
+        setGameMessage('Game over', 'ended');
       }
       playAgainButton.hidden = false;
       return;
     }
 
-    setGameMessage(`Game status: ${gameState.status}`);
+    setGameMessage(`Game status: ${gameState.status}`, 'ended');
     playAgainButton.hidden = true;
   };
 
