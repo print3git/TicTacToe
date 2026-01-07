@@ -5,10 +5,14 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node -c server.js && node -c public/client.js"
+    "test": "jest"
   },
   "dependencies": {
     "express": "^4.19.2",
     "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^6.3.4"
   }
 }
