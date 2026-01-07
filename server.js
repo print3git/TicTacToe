@@ -6,7 +6,7 @@ const { WebSocketServer } = require('ws');
 const app = express();
 
 app.get('/health', (req, res) => {
-  res.json({ ok: true });
+  res.status(200).type('application/json').send('{ "ok": true }');
 });
 
 const publicDir = path.join(__dirname, 'public');
