@@ -12,6 +12,9 @@
   const boardSquares = Array.from(document.querySelectorAll('.square'));
   const playAgainButton = document.getElementById('play-again');
   const leaveRoomButton = document.getElementById('leave-room');
+  const leaveRoomModal = document.getElementById('leave-room-modal');
+  const leaveRoomCancelButton = document.getElementById('cancel-leave-room');
+  const leaveRoomConfirmButton = document.getElementById('confirm-leave-room');
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
   const wsUrl = `${protocol}://${window.location.host}/ws`;
   const socket = new WebSocket(wsUrl);
@@ -20,6 +23,8 @@
   let playerSymbol = null;
   let gameState = null;
   let lobbyMessage = 'Create or join a game to begin.';
+  let isLeaveModalOpen = false;
+  let lastFocusedElement = null;
 
   const setConnectionStatus = (text) => {
     connectionStatusEl.textContent = text;
@@ -123,6 +128,89 @@
     gameState = null;
     lobbyMessage = message || 'Create or join a game to begin.';
     render();
+  };
+
+  const getLeaveModalFocusable = () => {
+    if (!leaveRoomModal) {
+      return [];
+    }
+    return Array.from(
+      leaveRoomModal.querySelectorAll(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((element) => !element.hasAttribute('disabled'));
+  };
+
+  const closeLeaveRoomModal = () => {
+    if (!leaveRoomModal || !isLeaveModalOpen) {
+      return;
+    }
+    isLeaveModalOpen = false;
+    leaveRoomModal.classList.remove('is-visible');
+    leaveRoomModal.hidden = true;
+    document.body.classList.remove('is-modal-open');
+    document.removeEventListener('keydown', handleLeaveModalKeydown);
+    if (lastFocusedElement instanceof HTMLElement) {
+      lastFocusedElement.focus();
+    }
+  };
+
+  const openLeaveRoomModal = () => {
+    if (!leaveRoomModal || isLeaveModalOpen) {
+      return;
+    }
+    isLeaveModalOpen = true;
+    lastFocusedElement = document.activeElement;
+    leaveRoomModal.hidden = false;
+    requestAnimationFrame(() => {
+      leaveRoomModal.classList.add('is-visible');
+    });
+    document.body.classList.add('is-modal-open');
+    document.addEventListener('keydown', handleLeaveModalKeydown);
+    const focusables = getLeaveModalFocusable();
+    const fallbackTarget = leaveRoomCancelButton || focusables[0] || leaveRoomModal;
+    if (fallbackTarget instanceof HTMLElement) {
+      fallbackTarget.focus();
+    }
+  };
+
+  const confirmLeaveRoom = () => {
+    if (!currentRoomId) {
+      return;
+    }
+    setError('');
+    sendMessage({ type: 'leave_room', roomId: currentRoomId });
+    resetToLobby();
+  };
+
+  const handleLeaveModalKeydown = (event) => {
+    if (!isLeaveModalOpen) {
+      return;
+    }
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeLeaveRoomModal();
+      return;
+    }
+    if (event.key !== 'Tab') {
+      return;
+    }
+    const focusables = getLeaveModalFocusable();
+    if (!focusables.length) {
+      event.preventDefault();
+      return;
+    }
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+      return;
+    }
+    if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   };
 
   socket.addEventListener('open', () => {
@@ -248,14 +336,29 @@
     if (!currentRoomId) {
       return;
     }
-    const shouldLeave = window.confirm('Are you sure you want to leave this room?');
-    if (!shouldLeave) {
-      return;
-    }
-    setError('');
-    sendMessage({ type: 'leave_room', roomId: currentRoomId });
-    resetToLobby();
+    openLeaveRoomModal();
   });
+
+  if (leaveRoomModal) {
+    leaveRoomModal.addEventListener('click', (event) => {
+      if (event.target === leaveRoomModal) {
+        closeLeaveRoomModal();
+      }
+    });
+  }
+
+  if (leaveRoomCancelButton) {
+    leaveRoomCancelButton.addEventListener('click', () => {
+      closeLeaveRoomModal();
+    });
+  }
+
+  if (leaveRoomConfirmButton) {
+    leaveRoomConfirmButton.addEventListener('click', () => {
+      closeLeaveRoomModal();
+      confirmLeaveRoom();
+    });
+  }
 
   render();
 })();

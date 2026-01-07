@@ -313,6 +313,83 @@ body {
   gap: 12px;
 }
 
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 1000;
+}
+
+.modal-overlay.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.modal-message {
+  margin: 0;
+  color: var(--muted);
+}
+
+.modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.danger-button {
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: #dc2626;
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(220, 38, 38, 0.25);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.danger-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(220, 38, 38, 0.28);
+}
+
+.danger-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+.is-modal-open {
+  overflow: hidden;
+}
+
 @media (max-width: 600px) {
   .square {
     width: 88px;
