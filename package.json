@@ -1,0 +1,14 @@
+{
+  "name": "tictactoe-remote",
+  "version": "0.1.0",
+  "description": "Remote tic-tac-toe step 1 scaffold with Express and WebSocket.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node -c server.js && node -c public/client.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "ws": "^8.18.0"
+  }
+}
