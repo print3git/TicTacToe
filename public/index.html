@@ -65,6 +65,24 @@
         </div>
       </section>
     </main>
+    <div class="modal-overlay" id="leave-room-modal" hidden>
+      <div
+        class="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="leave-room-title"
+        aria-describedby="leave-room-description"
+      >
+        <h2 class="modal-title" id="leave-room-title">Leave room?</h2>
+        <p class="modal-message" id="leave-room-description">
+          Are you sure you want to leave this room? The current game will end.
+        </p>
+        <div class="modal-actions">
+          <button id="cancel-leave-room" type="button" class="secondary-button">Cancel</button>
+          <button id="confirm-leave-room" type="button" class="danger-button">Leave room</button>
+        </div>
+      </div>
+    </div>
     <script src="/client.js"></script>
   </body>
 </html>
