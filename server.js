@@ -42,10 +42,16 @@ const createServer = () => {
     if (!room) {
       return;
     }
+    if (!room.board) {
+      return;
+    }
     const payload = {
       type: 'game_state',
       roomId: room.roomId,
+      board: room.board,
+      turn: room.turn,
       status: room.status,
+      winner: room.winner,
     };
     sendMessage(room.players.X, payload);
     sendMessage(room.players.O, payload);
@@ -90,12 +96,14 @@ const createServer = () => {
           roomId,
           players: { X: ws, O: null },
           status: 'waiting',
+          board: null,
+          turn: null,
+          winner: null,
         };
         rooms.set(roomId, room);
         socketToRoom.set(ws, roomId);
         console.log(`room ${roomId} created`);
         sendMessage(ws, { type: 'game_created', roomId, player: 'X' });
-        broadcastRoomState(room);
         return;
       }
 
@@ -118,10 +126,85 @@ const createServer = () => {
         }
 
         room.players.O = ws;
-        room.status = 'ready';
+        room.status = 'playing';
+        room.board = Array(9).fill('');
+        room.turn = 'X';
+        room.winner = null;
         socketToRoom.set(ws, roomId);
         console.log(`room ${roomId} joined`);
         sendMessage(ws, { type: 'game_joined', roomId, player: 'O' });
+        broadcastRoomState(room);
+        return;
+      }
+
+      if (message.type === 'make_move') {
+        const roomId = message.roomId;
+        if (typeof roomId !== 'string' || !rooms.has(roomId)) {
+          sendMessage(ws, { type: 'error', message: 'Room not found.' });
+          return;
+        }
+
+        const room = rooms.get(roomId);
+        const player =
+          room.players.X === ws ? 'X' : room.players.O === ws ? 'O' : null;
+        if (!player) {
+          sendMessage(ws, {
+            type: 'error',
+            message: 'You are not a player in this room.',
+          });
+          return;
+        }
+
+        if (room.status !== 'playing') {
+          sendMessage(ws, { type: 'error', message: 'Game is not active.' });
+          return;
+        }
+
+        if (room.turn !== player) {
+          sendMessage(ws, { type: 'error', message: 'Not your turn.' });
+          return;
+        }
+
+        const index = message.index;
+        if (!Number.isInteger(index) || index < 0 || index > 8) {
+          sendMessage(ws, { type: 'error', message: 'Invalid board index.' });
+          return;
+        }
+
+        if (room.board[index]) {
+          sendMessage(ws, { type: 'error', message: 'Square already occupied.' });
+          return;
+        }
+
+        room.board[index] = player;
+
+        const winningLines = [
+          [0, 1, 2],
+          [3, 4, 5],
+          [6, 7, 8],
+          [0, 3, 6],
+          [1, 4, 7],
+          [2, 5, 8],
+          [0, 4, 8],
+          [2, 4, 6],
+        ];
+        const winner = winningLines.find(
+          ([a, b, c]) =>
+            room.board[a] &&
+            room.board[a] === room.board[b] &&
+            room.board[a] === room.board[c],
+        );
+
+        if (winner) {
+          room.status = 'ended';
+          room.winner = room.board[winner[0]];
+        } else if (room.board.every((cell) => cell)) {
+          room.status = 'ended';
+          room.winner = 'draw';
+        } else {
+          room.turn = room.turn === 'X' ? 'O' : 'X';
+        }
+
         broadcastRoomState(room);
         return;
       }
@@ -145,7 +228,12 @@ const createServer = () => {
       if (room.players.O === ws) {
         room.players.O = null;
       }
-      room.status = room.players.X && room.players.O ? 'ready' : 'waiting';
+      room.status = room.players.X && room.players.O ? 'playing' : 'waiting';
+      if (room.status !== 'playing') {
+        room.board = null;
+        room.turn = null;
+        room.winner = null;
+      }
       console.log(`ws disconnected from room ${roomId}`);
       broadcastRoomState(room);
       cleanupRoomIfEmpty(room);
