@@ -274,11 +274,11 @@ const createServer = () => {
   return { app, server, wss };
 };
 
-const startServer = ({ port = 0, host = '0.0.0.0' } = {}) =>
+const startServer = ({ port = 0, host } = {}) =>
   new Promise((resolve, reject) => {
     const { app, server, wss } = createServer();
     server.once('error', reject);
-    server.listen(port, host, () => {
+    const onListen = () => {
       const address = server.address();
       resolve({
         app,
@@ -287,7 +287,12 @@ const startServer = ({ port = 0, host = '0.0.0.0' } = {}) =>
         host,
         port: typeof address === 'object' && address ? address.port : port,
       });
-    });
+    };
+    if (host) {
+      server.listen(port, host, onListen);
+      return;
+    }
+    server.listen(port, onListen);
   });
 
 const stopServer = ({ server, wss } = {}) =>
@@ -310,7 +315,8 @@ const stopServer = ({ server, wss } = {}) =>
 
 if (require.main === module) {
   const port = process.env.PORT || 3000;
-  startServer({ port, host: '0.0.0.0' }).then(({ port: boundPort }) => {
+  const host = process.env.HOST;
+  startServer({ port, host }).then(({ port: boundPort }) => {
     console.log(`server listening on ${boundPort}`);
   });
 }
