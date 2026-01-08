@@ -4,7 +4,7 @@
 A lightweight remote multiplayer tic-tac-toe game built with Node.js and WebSockets. It uses **server-authoritative state** so the server validates moves, enforces turns, and decides win/draw outcomes for fairness and consistency.
 
 ## Live Demo
-**Live Demo:** https://tictactoe-remote.onrender.com
+**Live Demo:** https://tictactoe-1xz8.onrender.com/
 
 ## How to Play
 1. Open the live URL.
